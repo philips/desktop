@@ -39,6 +39,7 @@ set(client_UI_SRCS
     UserStatusSelectorDialog.qml
     tray/ActivityActionButton.qml
     tray/ActivityItem.qml
+    tray/ActivityList.qml
     tray/Window.qml
     tray/UserLine.qml
     wizard/flow2authwidget.ui
@@ -109,6 +110,7 @@ set(client_SRCS
     remotewipe.cpp
     userstatusselectormodel.cpp
     emojimodel.cpp
+    fileactivitylistmodel.cpp
     tray/ActivityData.cpp
     tray/ActivityListModel.cpp
     tray/UserModel.cpp
