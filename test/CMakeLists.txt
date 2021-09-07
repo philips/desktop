@@ -16,6 +16,11 @@ target_link_libraries(testutils PUBLIC nextcloudsync Qt5::Test)
 target_include_directories(testutils PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(testutils PROPERTIES FOLDER Tests)
 
+nextcloud_add_test(AccountSetup)
+
+target_include_directories(AccountSetupTest PRIVATE  ${CMAKE_SOURCE_DIR}/src/3rdparty/qthttpserver/include)
+target_link_libraries(AccountSetupTest PRIVATE QtHttpServer)
+
 nextcloud_add_test(NextcloudPropagator)
 
 IF(BUILD_UPDATER)
@@ -60,6 +65,7 @@ nextcloud_add_test(Theme)
 nextcloud_add_test(IconUtils)
 nextcloud_add_test(NotificationCache)
 
+
 if( UNIX AND NOT APPLE )
     nextcloud_add_test(InotifyWatcher)
 endif(UNIX AND NOT APPLE)
@@ -90,3 +96,5 @@ if (CMOCKA_FOUND)
     include(AddCMockaTest)
     add_subdirectory(csync)
 endif (CMOCKA_FOUND)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/src/3rdparty/qthttpserver ${CMAKE_SOURCE_DIR}/src/3rdparty/qthttpserver)
