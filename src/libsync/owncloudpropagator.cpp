@@ -281,6 +281,7 @@ void PropagateItemJob::done(SyncFileItem::Status statusArg, const QString &error
     else
         qCInfo(lcPropagator) << "Completed propagation of" << _item->destination() << "by" << this << "with status" << _item->_status;
     emit propagator()->itemCompleted(_item);
+    qCInfo(lcPropagator) << "PropagateItemJob::done" << "emit finished" << _item->_status;
     emit finished(_item->_status);
 
     if (_item->_status == SyncFileItem::FatalError) {
@@ -952,6 +953,7 @@ void PropagatorCompositeJob::finalize()
         return;
 
     _state = Finished;
+    qCInfo(lcPropagator) << "PropagatorCompositeJob::finalize" << "emit finished" << (_hasError == SyncFileItem::NoStatus ? SyncFileItem::Success : _hasError);
     emit finished(_hasError == SyncFileItem::NoStatus ? SyncFileItem::Success : _hasError);
 }
 
@@ -1025,6 +1027,7 @@ void PropagateDirectory::slotFirstJobFinished(SyncFileItem::Status status)
             // Synchronously abort
             abort(AbortType::Synchronous);
             _state = Finished;
+            qCInfo(lcPropagator) << "PropagateDirectory::slotFirstJobFinished" << "emit finished" << status;
             emit finished(status);
         }
         return;
@@ -1067,6 +1070,7 @@ void PropagateDirectory::slotSubJobsFinished(SyncFileItem::Status status)
         }
     }
     _state = Finished;
+    qCInfo(lcPropagator) << "PropagateDirectory::slotSubJobsFinished" << "emit finished" << status;
     emit finished(status);
 }
 
@@ -1157,6 +1161,7 @@ void PropagateRootDirectory::slotSubJobsFinished(SyncFileItem::Status status)
             // Synchronously abort
             abort(AbortType::Synchronous);
             _state = Finished;
+            qCInfo(lcPropagator) << "PropagateRootDirectory::slotSubJobsFinished" << "emit finished" << status;
             emit finished(status);
         }
         return;
@@ -1168,6 +1173,7 @@ void PropagateRootDirectory::slotSubJobsFinished(SyncFileItem::Status status)
 void PropagateRootDirectory::slotDirDeletionJobsFinished(SyncFileItem::Status status)
 {
     _state = Finished;
+    qCInfo(lcPropagator) << "PropagateRootDirectory::slotDirDeletionJobsFinished" << "emit finished" << status;
     emit finished(status);
 }
 
