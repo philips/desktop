@@ -589,6 +589,11 @@ public:
         return _delayedJobs;
     }
 
+    void setScheduleDelayedJobs(bool active)
+    {
+        _scheduleDelayedJobs = active;
+    }
+
 private slots:
 
     void abortTimeout()
@@ -637,6 +642,7 @@ private:
     const QString _remoteFolder; // remote folder, ends with '/'
 
     std::vector<std::unique_ptr<PropagateItemJob>> _delayedJobs;
+    bool _scheduleDelayedJobs = false;
 };
 
 
