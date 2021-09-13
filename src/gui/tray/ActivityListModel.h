@@ -60,6 +60,7 @@ public:
         SyncFileStatusRole,
         DisplayActions
     };
+    Q_ENUM(DataRole)
 
     explicit ActivityListModel(QObject *parent = nullptr);
 
@@ -95,7 +96,7 @@ signals:
     void sendNotificationRequest(const QString &accountName, const QString &link, const QByteArray &verb, int row);
 
 protected:
-    void slotActivitiesReceived(const QJsonDocument &json, int statusCode);
+    void activitiesReceived(const QJsonDocument &json, int statusCode);
     QHash<int, QByteArray> roleNames() const override;
 
     AccountState *_accountState = nullptr;
