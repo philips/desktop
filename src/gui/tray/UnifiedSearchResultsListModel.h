@@ -34,6 +34,14 @@ class UnifiedSearchResultsListModel : public QAbstractListModel
 {
     Q_OBJECT
 
+    class Provider
+    {
+    public:
+        QString _id;
+        QString _name;
+        qint32 _order = INT32_MAX;
+    };
+
 public:
     explicit UnifiedSearchResultsListModel(AccountState *accountState, QObject *parent = nullptr);
     ~UnifiedSearchResultsListModel() override;
@@ -49,12 +57,12 @@ private slots:
 
 private:
     void startSearch();
-    void startSearchForProvider(const QString &providerId);
+    void startSearchForProvider(const Provider &provider);
 
 private:
     QTimer _unifiedSearchTextEditingFinishedTimer;
     QString _searchTerm;
-    QStringList _providers;
+    QMap<QString, Provider> _providers;
     AccountState *_accountState;
     QList<UnifiedSearchResultCategory> _resultsByCategory;
 };
