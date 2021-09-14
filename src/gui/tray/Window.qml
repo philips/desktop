@@ -665,7 +665,6 @@ Window {
                 }
             }
         }
-
         ListView {
             id: activityListView
             visible: !unifiedSearchResultsListView.visible
@@ -700,7 +699,7 @@ Window {
             anchors.left: trayWindowBackground.left
             anchors.right: trayWindowBackground.right
             anchors.bottom: trayWindowBackground.bottom
-            visible: model.length > 0
+            visible: true
             clip: true
             ScrollBar.vertical: ScrollBar {
                 id: unifiedSearchResultsListViewScrollbar

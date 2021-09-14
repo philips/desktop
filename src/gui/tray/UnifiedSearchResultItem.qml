@@ -38,11 +38,11 @@ MouseArea {
             
             Text {
                 id: activityTextTitle
-                text: title
+                text: name + " " + subject
                 width: parent.width
                 elide: Text.ElideRight
                 font.pixelSize: Style.topLinePixelSize
-                color: black
+                color: "black"
             }
         }
     }

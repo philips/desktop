@@ -20,6 +20,8 @@
 
 #include <algorithm>
 
+#include <QAbstractListModel>
+
 namespace OCC {
 
 UnifiedSearchResultsListModel::UnifiedSearchResultsListModel(AccountState *accountState, QObject *parent)
@@ -36,6 +38,53 @@ UnifiedSearchResultsListModel::~UnifiedSearchResultsListModel()
 
 QVariant UnifiedSearchResultsListModel::data(const QModelIndex &index, int role) const
 {
+    if (index.row() >= rowCount()) {
+        return QVariant();
+    }
+
+    int categoryIndex = -1;
+    int indexInCategory = -1;
+
+    int currentTotal = 0;
+
+    for (const auto &category : _resultsByCategory) {
+        ++categoryIndex;
+        currentTotal += category._results.size();
+
+        if (currentTotal <= index.row()) {
+            break;
+        }
+    }
+
+    if (currentTotal < index.row()) {
+        categoryIndex = -1;
+    }
+
+    if (categoryIndex != -1) {
+
+        int inrermediate = currentTotal - index.row();
+
+        indexInCategory = _resultsByCategory.at(categoryIndex)._results.size() - inrermediate;
+    }
+
+    switch(role) {
+    case NameRole: {
+        const auto row = index.row();
+        if (categoryIndex < 0 || categoryIndex >= _resultsByCategory.size()) {
+            return QVariant();
+        }
+
+        if (indexInCategory < 0 || indexInCategory >= _resultsByCategory.at(categoryIndex)._results.size()) {
+            return QVariant();
+        }
+        return _resultsByCategory.at(indexInCategory)._results.at(indexInCategory)._title;
+    }
+    case Subject: {
+        const auto row = index.row();
+        return QString(_resultsByCategory.at(0)._name + QString("_") + QString(row));
+    }
+    }
+
     return QVariant();
 }
 
@@ -48,6 +97,14 @@ int UnifiedSearchResultsListModel::rowCount(const QModelIndex &) const
     }
 
     return total;
+}
+
+QHash<int, QByteArray> UnifiedSearchResultsListModel::roleNames() const
+{
+    QHash<int, QByteArray> roles;
+    roles[NameRole] = "name";
+    roles[Subject] = "subject";
+    return roles;
 }
 
 void UnifiedSearchResultsListModel::setSearchTerm(const QString &term)
@@ -92,12 +149,12 @@ void UnifiedSearchResultsListModel::slotSearchTermEditingFinished()
 
             for (const auto& provider : providerList) {
                 const auto providerMap = provider.toMap();
-                Provider provider;
-                provider._name = providerMap["name"].toString();
-                if (!provider._name.isEmpty()) {
-                    provider._id = providerMap["id"].toString();
-                    provider._order = providerMap["order"].toInt();
-                    _providers.insert(provider._name, provider);
+                UnifiedSearchProvider newProvider;
+                newProvider._name = providerMap["name"].toString();
+                if (!newProvider._name.isEmpty()) {
+                    newProvider._id = providerMap["id"].toString();
+                    newProvider._order = providerMap["order"].toInt();
+                    _providers.insert(newProvider._name, newProvider);
                 }
             }
 
@@ -122,7 +179,7 @@ void UnifiedSearchResultsListModel::startSearch()
     }
 }
 
-void UnifiedSearchResultsListModel::startSearchForProvider(const Provider &provider)
+void UnifiedSearchResultsListModel::startSearchForProvider(const UnifiedSearchProvider &provider)
 {
     auto *job = new JsonApiJob(_accountState->account(), QLatin1String("ocs/v2.php/search/providers/%1/search").arg(provider._id));
     QUrlQuery params;
