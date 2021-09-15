@@ -380,6 +380,19 @@ private:
     bool scheduleDelayedJobs();
 };
 
+class BulkPropagatorJob : public PropagatorCompositeJob
+{
+    Q_OBJECT
+public:
+
+    explicit BulkPropagatorJob(OwncloudPropagator *propagator,
+                               std::vector<SyncFileItemPtr> &items);
+
+private:
+
+    std::vector<SyncFileItemPtr> _items;
+};
+
 /**
  * @brief Dummy job that just mark it as completed and ignored
  * @ingroup libsync
@@ -584,15 +597,12 @@ public:
 
     Q_REQUIRED_RESULT bool ignoreFilesUpload(const SyncFileItemPtr &item) const;
 
-    Q_REQUIRED_RESULT std::vector<std::unique_ptr<PropagateItemJob>>& delayedJobs()
+    Q_REQUIRED_RESULT std::vector<SyncFileItemPtr>& delayedTasks()
     {
-        return _delayedJobs;
+        return _delayedTasks;
     }
 
-    void setScheduleDelayedJobs(bool active)
-    {
-        _scheduleDelayedJobs = active;
-    }
+    void setScheduleDelayedJobs(bool active);
 
 private slots:
 
@@ -641,7 +651,7 @@ private:
     const QString _localDir; // absolute path to the local directory. ends with '/'
     const QString _remoteFolder; // remote folder, ends with '/'
 
-    std::vector<std::unique_ptr<PropagateItemJob>> _delayedJobs;
+    std::vector<SyncFileItemPtr> _delayedTasks;
     bool _scheduleDelayedJobs = false;
 };
 
