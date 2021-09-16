@@ -366,9 +366,9 @@ PropagateItemJob *OwncloudPropagator::createJob(const SyncFileItemPtr &item)
                 std::unique_ptr<PropagateUploadFileCommon> job;
                 if (item->_size > syncOptions()._initialChunkSize && account()->capabilities().chunkingNg()) {
                     // Item is above _initialChunkSize, thus will be classified as to be chunked
-                    job.reset(new PropagateUploadFileNG{this, item});
+                    job = std::make_unique<PropagateUploadFileNG>(this, item);
                 } else {
-                    job.reset(new PropagateUploadFileV1{this, item});
+                    job = std::make_unique<PropagateUploadFileV1>(this, item);
                 }
                 job->setDeleteExisting(deleteExisting);
                 return job.release();
