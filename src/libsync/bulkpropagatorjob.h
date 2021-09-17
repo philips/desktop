@@ -82,7 +82,7 @@ private:
 
     void startUploadFile(SyncFileItemPtr item, UploadFileInfo fileToUpload);
 
-    void doStartUpload(SyncFileItemPtr item, UploadFileInfo fileToUpload);
+    void doStartUpload(UploadFileInfo fileToUpload);
 
     void adjustLastJobTimeout(AbstractNetworkJob *job, qint64 fileSize);
 

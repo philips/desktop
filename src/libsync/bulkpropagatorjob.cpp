@@ -106,8 +106,7 @@ void BulkPropagatorJob::startUploadFile(SyncFileItemPtr item, UploadFileInfo fil
     return slotComputeContentChecksum(item, fileToUpload);
 }
 
-void BulkPropagatorJob::doStartUpload(SyncFileItemPtr item,
-                                      UploadFileInfo fileToUpload)
+void BulkPropagatorJob::doStartUpload(UploadFileInfo fileToUpload)
 {
     if (propagator()->_abortRequested)
         return;
@@ -150,25 +149,6 @@ void BulkPropagatorJob::doStartUpload(SyncFileItemPtr item,
     adjustLastJobTimeout(job, fileSize);
     job->start();
     //propagator()->_activeJobList.append(this);
-
-    bool parallelChunkUpload = true;
-
-    if (propagator()->account()->capabilities().chunkingParallelUploadDisabled()) {
-        // Server may also disable parallel chunked upload for any higher version
-        parallelChunkUpload = false;
-    } else {
-        QByteArray env = qgetenv("OWNCLOUD_PARALLEL_CHUNK");
-        if (!env.isEmpty()) {
-            parallelChunkUpload = env != "false" && env != "0";
-        } else {
-            int versionNum = propagator()->account()->serverVersionInt();
-            if (versionNum < Account::makeServerVersion(8, 0, 3)) {
-                // Disable parallel chunk upload severs older than 8.0.3 to avoid too many
-                // internal sever errors (#2743, #2938)
-                parallelChunkUpload = false;
-            }
-        }
-    }
 
     propagator()->scheduleNextJob();
 }
@@ -290,7 +270,7 @@ void BulkPropagatorJob::slotStartUpload(SyncFileItemPtr item,
         return slotOnErrorStartFolderUnlock(SyncFileItem::SoftError, tr("Local file changed during sync."));
     }
 
-    doStartUpload(item, fileToUpload);
+    doStartUpload(fileToUpload);
 }
 
 void BulkPropagatorJob::slotOnErrorStartFolderUnlock(SyncFileItem::Status status, const QString &errorString)
