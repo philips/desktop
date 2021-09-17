@@ -31,6 +31,8 @@
 #include "accountfwd.h"
 #include "syncoptions.h"
 
+#include <deque>
+
 namespace OCC {
 
 Q_DECLARE_LOGGING_CATEGORY(lcPropagator)
@@ -584,7 +586,7 @@ public:
 
     Q_REQUIRED_RESULT bool ignoreFilesUpload(const SyncFileItemPtr &item) const;
 
-    Q_REQUIRED_RESULT std::vector<SyncFileItemPtr>& delayedTasks()
+    Q_REQUIRED_RESULT std::deque<SyncFileItemPtr>& delayedTasks()
     {
         return _delayedTasks;
     }
@@ -638,7 +640,7 @@ private:
     const QString _localDir; // absolute path to the local directory. ends with '/'
     const QString _remoteFolder; // remote folder, ends with '/'
 
-    std::vector<SyncFileItemPtr> _delayedTasks;
+    std::deque<SyncFileItemPtr> _delayedTasks;
     bool _scheduleDelayedJobs = false;
 };
 

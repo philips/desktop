@@ -21,12 +21,13 @@
 
 #include <QLoggingCategory>
 #include <QVector>
+#include <deque>
 
 namespace OCC {
 
 Q_DECLARE_LOGGING_CATEGORY(lcBulkPropagatorJob)
 
-class BulkPropagatorJob : public PropagatorCompositeJob
+class BulkPropagatorJob : public PropagatorJob
 {
     Q_OBJECT
 
@@ -46,13 +47,15 @@ class BulkPropagatorJob : public PropagatorCompositeJob
 public:
 
     explicit BulkPropagatorJob(OwncloudPropagator *propagator,
-                               std::vector<SyncFileItemPtr> &items);
+                               std::deque<SyncFileItemPtr> &items);
 
     bool scheduleSelfOrChild() override;
 
     JobParallelism parallelism() override;
 
 private slots:
+
+    void startUploadFile(SyncFileItemPtr item, UploadFileInfo fileToUpload);
 
     void slotComputeContentChecksum(SyncFileItemPtr item,
                                     UploadFileInfo fileToUpload);
@@ -70,9 +73,12 @@ private slots:
                          const QByteArray &transmissionChecksum);
 
     // invoked on internal error to unlock a folder and faile
-    void slotOnErrorStartFolderUnlock(SyncFileItem::Status status, const QString &errorString);
+    void slotOnErrorStartFolderUnlock(SyncFileItemPtr item,
+                                      SyncFileItem::Status status,
+                                      const QString &errorString);
 
-    void slotPutFinished();
+    void slotPutFinished(SyncFileItemPtr item,
+                         UploadFileInfo fileToUpload);
 
     void slotUploadProgress(qint64, qint64);
 
@@ -80,18 +86,46 @@ private slots:
 
 private:
 
-    void startUploadFile(SyncFileItemPtr item, UploadFileInfo fileToUpload);
+    void doStartUpload(SyncFileItemPtr item,
+                       UploadFileInfo fileToUpload,
+                       QByteArray transmissionChecksumHeader);
 
-    void doStartUpload(UploadFileInfo fileToUpload);
+    void adjustLastJobTimeout(AbstractNetworkJob *job,
+                              qint64 fileSize);
 
-    void adjustLastJobTimeout(AbstractNetworkJob *job, qint64 fileSize);
+    void finalize(SyncFileItemPtr item,
+                  UploadFileInfo fileToUpload);
+
+    void done(SyncFileItemPtr item,
+              SyncFileItem::Status status,
+              const QString &errorString);
 
     /** Bases headers that need to be sent on the PUT, or in the MOVE for chunking-ng */
-    QMap<QByteArray, QByteArray> headers();
+    QMap<QByteArray, QByteArray> headers(SyncFileItemPtr item);
 
-    std::vector<SyncFileItemPtr> _items;
+    void abortWithError(SyncFileItemPtr item,
+                        SyncFileItem::Status status,
+                        const QString &error);
+
+    /**
+     * Checks whether the current error is one that should reset the whole
+     * transfer if it happens too often. If so: Bump UploadInfo::errorCount
+     * and maybe perform the reset.
+     */
+    void checkResettingErrors(SyncFileItemPtr item);
+
+    /**
+     * Error handling functionality that is shared between jobs.
+     */
+    void commonErrorHandling(SyncFileItemPtr item,
+                             UploadFileInfo fileToUpload,
+                             AbstractNetworkJob *job);
+
+    std::deque<SyncFileItemPtr> _items;
 
     QVector<AbstractNetworkJob *> _jobs; /// network jobs that are currently in transit
+
+    SyncFileItem::Status _finalStatus = SyncFileItem::Status::NoStatus;
 };
 
 }

@@ -817,7 +817,7 @@ Result<Vfs::ConvertToPlaceholderResult, QString> OwncloudPropagator::staticUpdat
 
 bool OwncloudPropagator::ignoreFilesUpload(const SyncFileItemPtr &item) const
 {
-    return !_scheduleDelayedJobs && !item->_isEncrypted;
+    return !_scheduleDelayedJobs && !item->_isEncrypted && _syncOptions._minChunkSize > item->_size;
 }
 
 void OwncloudPropagator::setScheduleDelayedJobs(bool active)
