@@ -63,8 +63,6 @@ BulkPropagatorJob::BulkPropagatorJob(OwncloudPropagator *propagator, std::deque<
 bool BulkPropagatorJob::scheduleSelfOrChild()
 {
     if (_items.empty()) {
-        qCInfo(lcBulkPropagatorJob) << "final status" << _finalStatus;
-        emit finished(_finalStatus);
         return false;
     }
 
