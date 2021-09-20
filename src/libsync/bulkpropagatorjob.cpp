@@ -78,7 +78,7 @@ bool BulkPropagatorJob::scheduleSelfOrChild()
         fileToUpload._path = propagator()->fullLocalPath(fileToUpload._file);
         startUploadFile(currentItem, fileToUpload);
     }); // We could be in a different thread (neon jobs)
-    return true;
+    return _items.empty();
 }
 
 PropagatorJob::JobParallelism BulkPropagatorJob::parallelism()
@@ -176,8 +176,6 @@ void BulkPropagatorJob::doStartUpload(SyncFileItemPtr item,
     adjustLastJobTimeout(job, fileSize);
     job->start();
     //propagator()->_activeJobList.append(this);
-
-    propagator()->scheduleNextJob();
 }
 
 void BulkPropagatorJob::slotComputeContentChecksum(SyncFileItemPtr item,
@@ -498,6 +496,8 @@ void BulkPropagatorJob::done(SyncFileItemPtr item,
     } else {
         qCInfo(lcBulkPropagatorJob) << "remaining upload tasks" << _items.size();
     }
+
+    propagator()->scheduleNextJob();
 }
 
 QMap<QByteArray, QByteArray> BulkPropagatorJob::headers(SyncFileItemPtr item)
