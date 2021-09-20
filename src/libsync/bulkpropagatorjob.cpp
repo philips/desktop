@@ -465,6 +465,67 @@ void BulkPropagatorJob::done(SyncFileItemPtr item,
     item->_errorString = errorString;
 
     qCInfo(lcBulkPropagatorJob) << "Item completed" << item->destination() << item->_status << item->_instruction << item->_errorString;
+
+    if (item->_isRestoration) {
+        if (item->_status == SyncFileItem::Success
+            || item->_status == SyncFileItem::Conflict) {
+            item->_status = SyncFileItem::Restoration;
+        } else {
+            item->_errorString += tr("; Restoration Failed: %1").arg(errorString);
+        }
+    } else {
+        if (item->_errorString.isEmpty()) {
+            item->_errorString = errorString;
+        }
+    }
+
+    if (propagator()->_abortRequested && (item->_status == SyncFileItem::NormalError
+                                          || item->_status == SyncFileItem::FatalError)) {
+        // an abort request is ongoing. Change the status to Soft-Error
+        item->_status = SyncFileItem::SoftError;
+    }
+
+    // Blacklist handling
+    switch (item->_status) {
+    case SyncFileItem::SoftError:
+    case SyncFileItem::FatalError:
+    case SyncFileItem::NormalError:
+    case SyncFileItem::DetailError:
+        // Check the blacklist, possibly adjusting the item (including its status)
+        blacklistUpdate(propagator()->_journal, *item);
+        break;
+    case SyncFileItem::Success:
+    case SyncFileItem::Restoration:
+        if (item->_hasBlacklistEntry) {
+            // wipe blacklist entry.
+            propagator()->_journal->wipeErrorBlacklistEntry(item->_file);
+            // remove a blacklist entry in case the file was moved.
+            if (item->_originalFile != item->_file) {
+                propagator()->_journal->wipeErrorBlacklistEntry(item->_originalFile);
+            }
+        }
+        break;
+    case SyncFileItem::Conflict:
+    case SyncFileItem::FileIgnored:
+    case SyncFileItem::NoStatus:
+    case SyncFileItem::BlacklistedError:
+    case SyncFileItem::FileLocked:
+    case SyncFileItem::FileNameInvalid:
+        // nothing
+        break;
+    }
+
+    if (item->hasErrorStatus()) {
+        qCWarning(lcPropagator) << "Could not complete propagation of" << item->destination() << "by" << this << "with status" << item->_status << "and error:" << item->_errorString;
+    } else {
+        qCInfo(lcPropagator) << "Completed propagation of" << item->destination() << "by" << this << "with status" << item->_status;
+    }
+
+    if (item->_status == SyncFileItem::FatalError) {
+        // Abort all remaining jobs.
+        propagator()->abort();
+    }
+
     emit propagator()->itemCompleted(item);
 
     switch (item->_status)
