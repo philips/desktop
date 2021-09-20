@@ -84,6 +84,8 @@ private slots:
 
     void slotJobDestroyed(QObject *job);
 
+    void slotPollFinished(UploadFileInfo fileToUpload);
+
 private:
 
     void doStartUpload(SyncFileItemPtr item,
@@ -99,6 +101,10 @@ private:
     void done(SyncFileItemPtr item,
               SyncFileItem::Status status,
               const QString &errorString);
+
+    void startPollJob(SyncFileItemPtr item,
+                      UploadFileInfo fileToUpload,
+                      const QString &path);
 
     /** Bases headers that need to be sent on the PUT, or in the MOVE for chunking-ng */
     QMap<QByteArray, QByteArray> headers(SyncFileItemPtr item);

@@ -336,7 +336,7 @@ void BulkPropagatorJob::slotPutFinished(SyncFileItemPtr item,
             return;
         }
         finished = true;
-        //startPollJob(path);
+        startPollJob(item, fileToUpload, path);
         return;
     }
 
@@ -557,6 +557,41 @@ void BulkPropagatorJob::done(SyncFileItemPtr item,
     }
 
     propagator()->scheduleNextJob();
+}
+
+void BulkPropagatorJob::startPollJob(SyncFileItemPtr item,
+                                     UploadFileInfo fileToUpload,
+                                     const QString &path)
+{
+    auto *job = new PollJob(propagator()->account(), path, item,
+        propagator()->_journal, propagator()->localPath(), this);
+    connect(job, &PollJob::finishedSignal, this, [this, fileToUpload] () {
+        slotPollFinished(fileToUpload);
+    });
+    SyncJournalDb::PollInfo info;
+    info._file = item->_file;
+    info._url = path;
+    info._modtime = item->_modtime;
+    info._fileSize = item->_size;
+    propagator()->_journal->setPollInfo(info);
+    propagator()->_journal->commit("add poll info");
+    //propagator()->_activeJobList.append(this);
+    job->start();
+}
+
+void BulkPropagatorJob::slotPollFinished(UploadFileInfo fileToUpload)
+{
+    auto *job = qobject_cast<PollJob *>(sender());
+    ASSERT(job);
+
+    //propagator()->_activeJobList.removeOne(this);
+
+    if (job->_item->_status != SyncFileItem::Success) {
+        done(job->_item, job->_item->_status, job->_item->_errorString);
+        return;
+    }
+
+    finalize(job->_item, fileToUpload);
 }
 
 QMap<QByteArray, QByteArray> BulkPropagatorJob::headers(SyncFileItemPtr item)
