@@ -23,6 +23,10 @@
 #include <QSharedPointer>
 #include <QList>
 #include <QToolButton>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QWidgetAction>
 
 class QMenu;
 class QTableWidgetItem;
@@ -37,6 +41,7 @@ class AbstractCredentials;
 class SyncResult;
 class LinkShare;
 class Share;
+class ElidedLabel;
 
 /**
  * @brief The ShareDialog class
@@ -77,7 +82,7 @@ private slots:
     void slotPasswordSet();
     void slotPasswordSetError(int code, const QString &message);
 
-	void slotCreateNote();
+    void slotCreateNote();
     void slotNoteSet();
 
     void slotSetExpireDate();
@@ -88,6 +93,9 @@ private slots:
 
     void slotDeleteAnimationFinished();
     void slotAnimationFinished();
+    
+    void slotCreateLabel();
+    void slotLabelSet();
 
 signals:
     void createLinkShare();
@@ -103,7 +111,7 @@ private:
     void showPasswordOptions(bool show);
     void togglePasswordOptions(bool enable);
 
-	void showNoteOptions(bool show);
+    void showNoteOptions(bool show);
     void toggleNoteOptions(bool enable);
     void setNote(const QString &note);
 
@@ -121,6 +129,8 @@ private:
     void startAnimation(const int start, const int end);
 
     void customizeStyle();
+    
+    void displayShareLinkLabel();
 
     Ui::ShareLinkWidget *_ui;
     AccountPtr _account;
@@ -146,6 +156,14 @@ private:
     QAction *_unshareLinkAction;
     QAction *_addAnotherLinkAction;
     QAction *_noteLinkAction;
+    QHBoxLayout *_shareLinkLayout{};
+    QLabel *_shareLinkLabel{};
+    ElidedLabel *_shareLinkElidedLabel{};
+    QLineEdit *_shareLinkEdit{};
+    QToolButton *_shareLinkButton{};
+    QProgressIndicator *_shareLinkProgressIndicator{};
+    QWidget *_shareLinkDefaultWidget{};
+    QWidgetAction *_shareLinkWidgetAction{};
 };
 }
 
