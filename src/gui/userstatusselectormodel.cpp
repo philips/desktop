@@ -406,23 +406,23 @@ QString UserStatusSelectorModel::timeDifferenceToString(int differenceSecs) cons
     } else if (differenceSecs < 60 * 60) {
         const auto minutesLeft = std::ceil(differenceSecs / 60.0);
         if (minutesLeft == 1) {
-            return tr("%1 minute", "", minutesLeft);
+            return tr("%1 minute", "", .arg(minutesLeft));
         } else {
-            return tr("%1 minutes", "", minutesLeft);
+            return tr("%1 minutes", "", .arg(minutesLeft));
         }
     } else if (differenceSecs < 60 * 60 * 24) {
         const auto hoursLeft = std::ceil(differenceSecs / 60.0 / 60.0);
         if (hoursLeft == 1) {
-            return tr("%1 hour, "", hoursLeft);
+            return tr("%1 hour", "", .arg(hoursLeft));
         } else {
-            return tr("%1 hours, "", hoursLeft);
+            return tr("%1 hours", "", .arg(hoursLeft));
         }
     } else {
         const auto daysLeft = std::ceil(differenceSecs / 60.0 / 60.0 / 24.0);
         if (daysLeft == 1) {
-            return tr("%1 day", "", daysLeft);
+            return tr("%1 day", "", .arg(daysLeft));
         } else {
-            return tr("%1 days", "", daysLeft);
+            return tr("%1 days", "", .arg(daysLeft));
         }
     }
 }
