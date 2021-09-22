@@ -107,8 +107,6 @@ void BulkPropagatorJob::startUploadFile(SyncFileItemPtr item, UploadFileInfo fil
         return;
     }
 
-    //propagator()->_activeJobList.append(this);
-
     qCDebug(lcBulkPropagatorJob) << "Running the compute checksum";
     return slotComputeContentChecksum(item, fileToUpload);
 }
@@ -173,7 +171,6 @@ void BulkPropagatorJob::doStartUpload(SyncFileItemPtr item,
     connect(job, &QObject::destroyed, this, &BulkPropagatorJob::slotJobDestroyed);
     adjustLastJobTimeout(job, fileSize);
     job->start();
-    //propagator()->_activeJobList.append(this);
 }
 
 void BulkPropagatorJob::slotComputeContentChecksum(SyncFileItemPtr item,
@@ -257,10 +254,6 @@ void BulkPropagatorJob::slotStartUpload(SyncFileItemPtr item,
                                         const QByteArray &transmissionChecksum)
 {
     QByteArray transmissionChecksumHeader;
-
-    // Remove ourselfs from the list of active job, before any posible call to done()
-    // When we start chunks, we will add it again, once for every chunks.
-    //propagator()->_activeJobList.removeOne(this);
 
     transmissionChecksumHeader = makeChecksumHeader(transmissionChecksumType, transmissionChecksum);
 
@@ -423,8 +416,9 @@ void BulkPropagatorJob::finalize(SyncFileItemPtr item,
 {
     // Update the quota, if known
     auto quotaIt = propagator()->_folderQuota.find(QFileInfo(item->_file).path());
-    if (quotaIt != propagator()->_folderQuota.end())
+    if (quotaIt != propagator()->_folderQuota.end()) {
         quotaIt.value() -= fileToUpload._size;
+    }
 
     // Update the database entry
     const auto result = propagator()->updateMetadata(*item);
@@ -582,7 +576,6 @@ void BulkPropagatorJob::startPollJob(SyncFileItemPtr item,
     propagator()->_journal->setPollInfo(info);
     propagator()->_journal->commit("add poll info");
     _jobs.append(job);
-    //propagator()->_activeJobList.append(this);
     job->start();
     if (!_items.empty()) {
         scheduleSelfOrChild();
@@ -595,8 +588,6 @@ void BulkPropagatorJob::slotPollFinished(UploadFileInfo fileToUpload)
     ASSERT(job);
 
     slotJobDestroyed(job);
-
-    //propagator()->_activeJobList.removeOne(this);
 
     if (job->_item->_status != SyncFileItem::Success) {
         done(job->_item, job->_item->_status, job->_item->_errorString);
@@ -611,8 +602,9 @@ QMap<QByteArray, QByteArray> BulkPropagatorJob::headers(SyncFileItemPtr item)
     QMap<QByteArray, QByteArray> headers;
     headers[QByteArrayLiteral("Content-Type")] = QByteArrayLiteral("application/octet-stream");
     headers[QByteArrayLiteral("X-OC-Mtime")] = QByteArray::number(qint64(item->_modtime));
-    if (qEnvironmentVariableIntValue("OWNCLOUD_LAZYOPS"))
+    if (qEnvironmentVariableIntValue("OWNCLOUD_LAZYOPS")) {
         headers[QByteArrayLiteral("OC-LazyOps")] = QByteArrayLiteral("true");
+    }
 
     if (item->_file.contains(QLatin1String(".sys.admin#recall#"))) {
         // This is a file recall triggered by the admin.  Note: the
@@ -637,14 +629,18 @@ QMap<QByteArray, QByteArray> BulkPropagatorJob::headers(SyncFileItemPtr item)
     auto conflictRecord = propagator()->_journal->conflictRecord(item->_file.toUtf8());
     if (conflictRecord.isValid()) {
         headers[QByteArrayLiteral("OC-Conflict")] = "1";
-        if (!conflictRecord.initialBasePath.isEmpty())
+        if (!conflictRecord.initialBasePath.isEmpty()) {
             headers[QByteArrayLiteral("OC-ConflictInitialBasePath")] = conflictRecord.initialBasePath;
-        if (!conflictRecord.baseFileId.isEmpty())
+        }
+        if (!conflictRecord.baseFileId.isEmpty()) {
             headers[QByteArrayLiteral("OC-ConflictBaseFileId")] = conflictRecord.baseFileId;
-        if (conflictRecord.baseModtime != -1)
+        }
+        if (conflictRecord.baseModtime != -1) {
             headers[QByteArrayLiteral("OC-ConflictBaseMtime")] = QByteArray::number(conflictRecord.baseModtime);
-        if (!conflictRecord.baseEtag.isEmpty())
+        }
+        if (!conflictRecord.baseEtag.isEmpty()) {
             headers[QByteArrayLiteral("OC-ConflictBaseEtag")] = conflictRecord.baseEtag;
+        }
     }
 
     return headers;
