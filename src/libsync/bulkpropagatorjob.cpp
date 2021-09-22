@@ -403,6 +403,7 @@ void BulkPropagatorJob::slotUploadProgress(qint64, qint64)
 void BulkPropagatorJob::slotJobDestroyed(QObject *job)
 {
     qCInfo(lcBulkPropagatorJob()) << "slotJobDestroyed";
+    _jobs.erase(std::remove(_jobs.begin(), _jobs.end(), job), _jobs.end());
 }
 
 void BulkPropagatorJob::adjustLastJobTimeout(AbstractNetworkJob *job, qint64 fileSize)
@@ -550,13 +551,18 @@ void BulkPropagatorJob::done(SyncFileItemPtr item,
     }
 
     if (_items.empty()) {
+        if (!_jobs.empty()) {
+            // just wait for the other job to finish.
+            return;
+        }
+
         qCInfo(lcBulkPropagatorJob) << "final status" << _finalStatus;
         emit finished(_finalStatus);
+        propagator()->scheduleNextJob();
     } else {
         qCInfo(lcBulkPropagatorJob) << "remaining upload tasks" << _items.size();
+        scheduleSelfOrChild();
     }
-
-    propagator()->scheduleNextJob();
 }
 
 void BulkPropagatorJob::startPollJob(SyncFileItemPtr item,
@@ -575,14 +581,20 @@ void BulkPropagatorJob::startPollJob(SyncFileItemPtr item,
     info._fileSize = item->_size;
     propagator()->_journal->setPollInfo(info);
     propagator()->_journal->commit("add poll info");
+    _jobs.append(job);
     //propagator()->_activeJobList.append(this);
     job->start();
+    if (!_items.empty()) {
+        scheduleSelfOrChild();
+    }
 }
 
 void BulkPropagatorJob::slotPollFinished(UploadFileInfo fileToUpload)
 {
     auto *job = qobject_cast<PollJob *>(sender());
     ASSERT(job);
+
+    slotJobDestroyed(job);
 
     //propagator()->_activeJobList.removeOne(this);
 
