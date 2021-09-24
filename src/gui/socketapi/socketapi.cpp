@@ -660,7 +660,7 @@ public:
     }
 
 private slots:
-    void sharesFetched(const QList<QSharedPointer<Share>> &shares)
+    void sharesFetched(const QList<QSharedPointer<OCC::Share>> &shares)
     {
         auto shareName = SocketApi::tr("Context menu share");
 
@@ -681,7 +681,7 @@ private slots:
         _shareManager.createLinkShare(_localFile, shareName, QString());
     }
 
-    void linkShareCreated(const QSharedPointer<LinkShare> &share)
+    void linkShareCreated(const QSharedPointer<OCC::LinkShare> &share)
     {
         qCDebug(lcPublicLink) << "New share created";
         success(share->getLink().toString());
