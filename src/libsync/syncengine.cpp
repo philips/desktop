@@ -768,7 +768,7 @@ void SyncEngine::slotDiscoveryFinished()
 
 void SyncEngine::slotCleanPollsJobAborted(const QString &error)
 {
-    syncError(error);
+    emit syncError(error);
     finalize(false);
 }
 

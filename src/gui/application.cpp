@@ -503,7 +503,7 @@ void Application::slotownCloudWizardDone(int res)
             Utility::setLaunchOnStartup(_theme->appName(), _theme->appNameGUI(), true);
         }
 
-        Systray::instance()->showWindow();
+        emit Systray::instance()->showWindow();
     }
 }
 
