@@ -24,7 +24,7 @@ class AsyncImageResponse : public QQuickImageResponse
 public:
     AsyncImageResponse(const QString &id, const QSize &requestedSize)
     {
-        _imagePaths = id.split(";", Qt::SkipEmptyParts);
+        _imagePaths = id.split(QLatin1Char(';'), Qt::SkipEmptyParts);
         _requestedImageSize = requestedSize;
 
         if (_imagePaths.isEmpty()) {

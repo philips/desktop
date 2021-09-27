@@ -46,6 +46,9 @@ QVariant UnifiedSearchResultsListModel::data(const QModelIndex &index, int role)
     case CategoryIdRole: {
         return _resultsCombined.at(index.row())._categoryId;
     }
+    case ImagesRole: {
+        return _resultsCombined.at(index.row())._images;
+    }
     case IconRole: {
         const auto resultInfo = _resultsCombined.at(index.row());
 
@@ -80,19 +83,7 @@ QVariant UnifiedSearchResultsListModel::data(const QModelIndex &index, int role)
         return _resultsCombined.at(index.row())._subline;
     }
     case ThumbnailUrlRole: {
-        const auto resultInfo = _resultsCombined.at(index.row());
-
-        if (resultInfo._thumbnailUrl.contains(QStringLiteral("/"))) {
-            const QUrl urlForIcon(resultInfo._thumbnailUrl);
-
-            if (!urlForIcon.isValid() || urlForIcon.scheme().isEmpty()) {
-                if (const auto currentUser = UserModel::instance()->currentUser()) {
-                    return QString(currentUser->server(false) + resultInfo._thumbnailUrl);
-                }
-            }
-        }
-
-        return resultInfo._thumbnailUrl;
+        return _resultsCombined.at(index.row())._thumbnailUrl;
     }
     case ResourceUrlRole: {
         return _resultsCombined.at(index.row())._resourceUrl;
@@ -289,14 +280,14 @@ void UnifiedSearchResultsListModel::slotSearchForProviderFinished(const QJsonDoc
 
     QList<UnifiedSearchResult> newEntries;
 
-    const auto data = json.object().value("ocs").toObject().value("data").toObject();
+    const auto data = json.object().value(QStringLiteral("ocs")).toObject().value(QStringLiteral("data")).toObject();
     if (!data.isEmpty()) {
         const auto dataMap = data.toVariantMap();
-        const auto name = data.value("name").toString();
+        const auto name = data.value(QStringLiteral("name")).toString();
         const auto providerForResults = _providers.find(name);
-        const auto isPaginated = data.value("isPaginated").toBool();
-        const auto cursor = data.value("cursor").toInt();
-        const auto entries = data.value("entries").toVariant().toList();
+        const auto isPaginated = data.value(QStringLiteral("isPaginated")).toBool();
+        const auto cursor = data.value(QStringLiteral("cursor")).toInt();
+        const auto entries = data.value(QStringLiteral("entries")).toVariant().toList();
 
         if (providerForResults != _providers.end() && !entries.isEmpty()) {
             UnifiedSearchResultCategory &category = _resultsByCategory[(*providerForResults)._id];
@@ -319,14 +310,31 @@ void UnifiedSearchResultsListModel::slotSearchForProviderFinished(const QJsonDoc
             for (const auto &entry : entries) {
                 UnifiedSearchResult result;
                 result._categoryId = category._id;
-                result._categoryName = category._name;
-                result._icon = entry.toMap()["icon"].toString();
-                result._isRounded = entry.toMap()["rounded"].toBool();
                 result._order = category._order;
-                result._title = entry.toMap()["title"].toString();
-                result._subline = entry.toMap()["subline"].toString();
-                result._resourceUrl = entry.toMap()["resourceUrl"].toString();
-                result._thumbnailUrl = entry.toMap()["thumbnailUrl"].toString();
+                result._categoryName = category._name;
+                result._icon = entry.toMap().value(QStringLiteral("icon")).toString();
+                result._isRounded = entry.toMap().value(QStringLiteral("rounded")).toBool();
+                result._title = entry.toMap().value(QStringLiteral("title")).toString();
+                result._subline = entry.toMap().value(QStringLiteral("subline")).toString();
+                result._resourceUrl = entry.toMap().value(QStringLiteral("resourceUrl")).toString();
+                result._thumbnailUrl = entry.toMap().value(QStringLiteral("thumbnailUrl")).toString();
+
+                const QStringList listImages = { result._thumbnailUrl, result._icon };
+
+                result._images = listImages.join(QLatin1Char(';'));
+
+                if (result._thumbnailUrl.contains(QLatin1Char('/')) || result._thumbnailUrl.contains(QLatin1Char('\\'))) {
+                    const QUrl urlForIcon(result._thumbnailUrl);
+
+                    if (!urlForIcon.isValid() || urlForIcon.scheme().isEmpty()) {
+                        if (const auto currentUser = UserModel::instance()->currentUser()) {
+                            auto serverUrl = QUrl(currentUser->server(false));
+                            serverUrl.setPath(result._thumbnailUrl);
+                            result._thumbnailUrl = serverUrl.toString();
+                        }
+                    }
+                }
+
                 newEntries.push_back(result);
             }
             category._results.append(newEntries);
@@ -376,7 +384,7 @@ void UnifiedSearchResultsListModel::startSearchForProvider(const UnifiedSearchPr
     QUrlQuery params;
     params.addQueryItem(QStringLiteral("term"), searchTerm());
     if (cursor > 0) {
-        params.addQueryItem("cursor", QString::number(cursor));
+        params.addQueryItem(QStringLiteral("cursor"), QString::number(cursor));
         job->setProperty("appendResults", true);
     }
     job->setProperty("providerId", provider._id);
