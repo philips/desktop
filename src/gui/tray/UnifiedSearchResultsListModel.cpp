@@ -53,24 +53,18 @@ QVariant UnifiedSearchResultsListModel::data(const QModelIndex &index, int role)
         const auto resultInfo = _resultsCombined.at(index.row());
 
         if (!resultInfo._icon.isEmpty()) {
-            if (resultInfo._icon.contains(QStringLiteral("/"))) {
-                const QUrl urlForIcon(resultInfo._icon);
+            const QUrl urlForIcon(resultInfo._icon);
 
-                if (!urlForIcon.isValid() || urlForIcon.scheme().isEmpty()) {
-                    if (const auto currentUser = UserModel::instance()->currentUser()) {
-                        return QString(currentUser->server(false) + resultInfo._icon);
-                    }
+            if (!urlForIcon.isValid() || urlForIcon.scheme().isEmpty()) {
+                if (resultInfo._icon.contains(QStringLiteral("folder"))) {
+                    return QStringLiteral(":/client/theme/black/folder.svg");
+                } else if (resultInfo._icon.contains(QStringLiteral("deck"))) {
+                    return QStringLiteral(":/client/theme/black/deck.svg");
+                } else if (resultInfo._icon.contains(QStringLiteral("calendar"))) {
+                    return QStringLiteral(":/client/theme/black/calendar.svg");
+                } else if (resultInfo._icon.contains(QStringLiteral("mail"))) {
+                    return QStringLiteral(":/client/theme/black/email.svg");
                 }
-            }
-
-            if (resultInfo._icon.contains(QStringLiteral("folder"))) {
-                return QStringLiteral(":/client/theme/black/folder.svg");
-            } else if (resultInfo._icon.contains(QStringLiteral("deck"))) {
-                return QStringLiteral(":/client/theme/black/deck.svg");
-            } else if (resultInfo._icon.contains(QStringLiteral("calendar"))) {
-                return QStringLiteral(":/client/theme/black/calendar.svg");
-            } else if (resultInfo._icon.contains(QStringLiteral("mail"))) {
-                return QStringLiteral(":/client/theme/black/email.svg");
             }
         }
 
@@ -231,15 +225,15 @@ void UnifiedSearchResultsListModel::slotSearchTermEditingFinished()
                 _errorString = tr("Search has failed for '%1'. No search providers available.").arg(searchTerm());
                 return;
             }
-            const auto providerList = json.object().value("ocs").toObject().value("data").toVariant().toList();
+            const auto providerList = json.object().value(QStringLiteral("ocs")).toObject().value(QStringLiteral("data")).toVariant().toList();
 
             for (const auto &provider : providerList) {
                 const auto providerMap = provider.toMap();
                 UnifiedSearchProvider newProvider;
-                newProvider._name = providerMap["name"].toString();
+                newProvider._name = providerMap[QStringLiteral("name")].toString();
                 if (!newProvider._name.isEmpty()) {
-                    newProvider._id = providerMap["id"].toString();
-                    newProvider._order = providerMap["order"].toInt();
+                    newProvider._id = providerMap[QStringLiteral("id")].toString();
+                    newProvider._order = providerMap[QStringLiteral("order")].toInt();
                     _providers.insert(newProvider._name, newProvider);
                 }
             }
@@ -313,6 +307,19 @@ void UnifiedSearchResultsListModel::slotSearchForProviderFinished(const QJsonDoc
                 result._order = category._order;
                 result._categoryName = category._name;
                 result._icon = entry.toMap().value(QStringLiteral("icon")).toString();
+
+                if (result._icon.contains(QLatin1Char('/')) || result._thumbnailUrl.contains(QLatin1Char('\\'))) {
+                    const QUrl urlForIcon(result._icon);
+
+                    if (!urlForIcon.isValid() || urlForIcon.scheme().isEmpty()) {
+                        if (const auto currentUser = UserModel::instance()->currentUser()) {
+                            auto serverUrl = QUrl(currentUser->server(false));
+                            serverUrl.setPath(result._icon);
+                            result._icon = serverUrl.toString();
+                        }
+                    }
+                }
+
                 result._isRounded = entry.toMap().value(QStringLiteral("rounded")).toBool();
                 result._title = entry.toMap().value(QStringLiteral("title")).toString();
                 result._subline = entry.toMap().value(QStringLiteral("subline")).toString();
